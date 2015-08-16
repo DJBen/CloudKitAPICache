@@ -60,7 +60,7 @@ class SettingsTableViewController: UITableViewController {
         } else if indexPath.section == 1 {
             let cell = tableView.dequeueReusableCellWithIdentifier("maxAgeCell", forIndexPath: indexPath)
             cell.textLabel?.text = SettingsTableViewController.maxAgesReadableStrings[indexPath.row]
-            if SettingsTableViewController.maxAges[indexPath.row].seconds == CloudKitAPICacheManager.sharedManager.cachePolicy.maxAge.seconds {
+            if SettingsTableViewController.maxAges[indexPath.row].seconds == CloudKitAPICacheManager.sharedManager.globalCachePolicy.maxAge.seconds {
                 cell.accessoryType = .Checkmark
             } else {
                 cell.accessoryType = .None
@@ -85,7 +85,7 @@ class SettingsTableViewController: UITableViewController {
         if indexPath.section == 0 {
             Requests.selectedIndex = indexPath.row
         } else if indexPath.section == 1 {
-            CloudKitAPICacheManager.sharedManager.cachePolicy = CloudKitAPICachePolicy(maxAge: SettingsTableViewController.maxAges[indexPath.row])
+            CloudKitAPICacheManager.sharedManager.globalCachePolicy = CloudKitAPICachePolicy(maxAge: SettingsTableViewController.maxAges[indexPath.row])
         }
         tableView.reloadData()
     }

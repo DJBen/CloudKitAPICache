@@ -10,12 +10,40 @@ import UIKit
 import CommonCrypto
 import CloudKit
 
-/// The API cache manager, which is capable of caching an `NSURLRequest` to the iCloud to reduce the call to the original API.
-
 public typealias CachedDataCompletionBlock =  (Bool, NSData?, NSError?) -> Void
 public typealias CacheDataBlock = (NSData?, NSError?) -> Void
 public typealias CacheErrorBlock = (NSError?) -> Void
 public typealias CacheNetworkResponseBlock = (NSData?, NSURLResponse?, NSError?) -> Void
+
+/// The delegate for CloudKitAPICacheManager.
+
+@objc public protocol CloudKitAPICacheDelegate {
+    
+    /**
+    The callback that checks if certain data fetched from source API should be cached.
+    There are some situations you should selectively choose whether to cache the data.
+    For example, you may want only to cache the data when it does not contain an error.
+    The client will by default cache all data retrieved if no implementation is supplied.
+    
+    :param: data    The data to be cached
+    :param: request The URL request that generates the data
+    :return: `true` if the data for the specified URL request should be cached
+    */
+    
+    optional func shouldCacheData(data: NSData, forRequest request: NSURLRequest) -> Bool
+    
+    /**
+    Specify the cache policy for every request. If you don't implement this method, 
+    the cache policy will default to `CloudKitAPICachePolicy.defaultPolicy`
+    
+    :param: request The URL request
+    :return: The cache policy for the specified URL request
+    */
+    optional func cachePolicyForRequest(request: NSURLRequest) -> CloudKitAPICachePolicy
+    
+}
+
+/// The API cache manager, which is capable of caching an `NSURLRequest` to the iCloud to reduce the call to the original API.
 
 public class CloudKitAPICacheManager: NSObject {
     
@@ -23,12 +51,11 @@ public class CloudKitAPICacheManager: NSObject {
     public static let sharedManager = CloudKitAPICacheManager()
 
     public static let UnderlyingErrorKey = "underlyingError"
-    public static let OldDataKey = "oldData"
 
     public enum CloudKitAPICacheError: ErrorType {
         case RequestError(underlyingError: NSError)
         case NoData
-        case CachedRecordExpired(oldData: NSData)
+        case CachedRecordExpired
         case MalformedRequest
         case NotCached // The user has responded `false` to the `shouldCacheData` block, therefore the data is not cached
         
@@ -40,25 +67,20 @@ public class CloudKitAPICacheManager: NSObject {
             case .RequestError(let underlyingError):
                 let error = NSError(domain: "CloudKitAPICache.CloudKitAPICacheManager.CloudKitAPICacheError", code: 0, userInfo: [UnderlyingErrorKey: underlyingError])
                 return error
-            case .CachedRecordExpired(let oldData):
-                let error = NSError(domain: "CloudKitAPICache.CloudKitAPICacheManager.CloudKitAPICacheError", code: 2, userInfo: [OldDataKey: oldData])
-                return error
             default:
                 return self as NSError
             }
         }
     }
     
+    public var delegate: CloudKitAPICacheDelegate?
+    
     var publicDatabase: CKDatabase {
         return CKContainer.defaultContainer().publicCloudDatabase
     }
     
-    public var cachePolicy = CloudKitAPICachePolicy.defaultPolicy
-    
-    /// The callback that checks if certain data fetched from source API should be cached.
-    /// There are some situations you should selectively choose whether to cache the data.
-    /// For example, you may want only to cache the data when it does not contain an error.
-    public var shouldCacheData: (NSData, NSURLRequest) -> Bool = { _ in true }
+    /// The global cache policy. Defaults to one hour of age. If you wish to change the policy, you can initialize your own policy object and assign to this property. Note that the delegate method `-shouldCacheData:forRequest:` takes precedence over this property.
+    public var globalCachePolicy = CloudKitAPICachePolicy.defaultPolicy
     
     private override init() {
         super.init()
@@ -93,53 +115,87 @@ public class CloudKitAPICacheManager: NSObject {
                 completion(isCached, data, error)
             }
         }
+        
+        // Called when the manager fails to find record in iCloud because of any reason
+        let tryFetchFromSource: (expired: Bool) -> Void = { expired in
+            guard autoFetch else {
+                let notExistError = expired ? CloudKitAPICacheError.CachedRecordExpired : .NoData
+                mainThreadFetchCompletion(nil, notExistError.toNSError())
+                mainThreadCompletion(false, nil, notExistError.toNSError())
+                return
+            }
+            let task = NSURLSession.sharedSession().dataTaskWithRequest(request) { (data, _, error) -> Void in
+                guard error == nil else {
+                    mainThreadFetchCompletion(nil, CloudKitAPICacheError.RequestError(underlyingError: error!).toNSError())
+                    mainThreadCompletion(false, nil, CloudKitAPICacheError.RequestError(underlyingError: error!).toNSError())
+                    return
+                }
+                mainThreadCompletion(false, data, nil)
+                
+                guard self.delegate?.shouldCacheData?(data!, forRequest: request) ?? true else {
+                    mainThreadCacheCompletion(CloudKitAPICacheError.NotCached.toNSError())
+                    return
+                }
+                self.cacheRequest(request, data: data!, savePolicy: .ChangedKeys) { (error) -> Void in
+                    mainThreadCacheCompletion(error)
+                }
+            }
+            task.resume()
+        }
+        
+        // Fetch the whole record
+        let fetchRecordFromCloud: (recordName: String) -> Void = { recordName in
+            self.publicDatabase.fetchRecordWithID(CKRecordID(recordName: recordName)) { (record, error) -> Void in
+                guard error == nil || error!.code == CKErrorCode.UnknownItem.rawValue else {
+                    mainThreadFetchCompletion(nil, CloudKitAPICacheError.RequestError(underlyingError: error!).toNSError())
+                    mainThreadCompletion(false, nil, CloudKitAPICacheError.RequestError(underlyingError: error!).toNSError())
+                    return
+                }
+                
+                if let responseData = record?[.ResponseData] as? NSData {
+                    mainThreadFetchCompletion(responseData, nil)
+                    mainThreadCompletion(true, responseData, nil)
+                } else {
+                    tryFetchFromSource(expired: false)
+                }
+            }
+        }
+        
+        // Fetch only the metadata first, then decide whether to fetch from source or to fetch from cloud based on whether the data has expired
         let recordName = request.SHA1!
-        publicDatabase.fetchRecordWithID(CKRecordID(recordName: recordName)) { (record, error) -> Void in
-            guard error == nil || error!.code == CKErrorCode.UnknownItem.rawValue else {
+        let recordID = CKRecordID(recordName: recordName)
+        let fetchOperation = CKFetchRecordsOperation(recordIDs: [recordID])
+        fetchOperation.desiredKeys = []
+        fetchOperation.fetchRecordsCompletionBlock = { recordDict, error in
+            let realErrorOccurred: Bool
+            if error != nil {
+                if let dict = error?.userInfo[CKPartialErrorsByItemIDKey], subError = dict[recordID] as? NSError where error!.code == CKErrorCode.PartialFailure.rawValue {
+                    realErrorOccurred = subError.code != CKErrorCode.UnknownItem.rawValue
+                } else {
+                    realErrorOccurred = error!.code != CKErrorCode.UnknownItem.rawValue
+                }
+            } else {
+                realErrorOccurred = false
+            }
+            guard realErrorOccurred == false else {
                 mainThreadFetchCompletion(nil, CloudKitAPICacheError.RequestError(underlyingError: error!).toNSError())
                 mainThreadCompletion(false, nil, CloudKitAPICacheError.RequestError(underlyingError: error!).toNSError())
                 return
             }
-            
-            // Called when the manager fails to find record in iCloud because of any reason
-            let tryFetchFromSource: (expired: Bool, data: NSData?) -> Void = { expired, data in
-                guard autoFetch else {
-                    let notExistError = expired ? CloudKitAPICacheError.CachedRecordExpired(oldData: data!) : .NoData
-                    mainThreadFetchCompletion(nil, notExistError.toNSError())
-                    mainThreadCompletion(false, nil, notExistError.toNSError())
-                    return
-                }
-                let task = NSURLSession.sharedSession().dataTaskWithRequest(request) { (data, _, error) -> Void in
-                    guard error == nil else {
-                        mainThreadFetchCompletion(nil, CloudKitAPICacheError.RequestError(underlyingError: error!).toNSError())
-                        mainThreadCompletion(false, nil, CloudKitAPICacheError.RequestError(underlyingError: error!).toNSError())
-                        return
-                    }
-                    mainThreadCompletion(false, data, nil)
-
-                    guard self.shouldCacheData(data!, request) == true else {
-                        mainThreadCacheCompletion(CloudKitAPICacheError.NotCached.toNSError())
-                        return
-                    }
-                    self.cacheRequest(request, data: data!, savePolicy: .ChangedKeys) { (error) -> Void in
-                        mainThreadCacheCompletion(error)
-                    }
-                }
-                task.resume()
-            }
-            
-            if let responseData = record?[.ResponseData] as? NSData {
-                if let modificationDate = record?.modificationDate
-                    where NSDate().timeIntervalSinceDate(modificationDate) > self.cachePolicy.maxAge.seconds {
-                        tryFetchFromSource(expired: true, data: responseData)
+            if recordDict!.count > 0 {
+                let record = recordDict!.values.array[0]
+                let cachePolicy = self.delegate?.cachePolicyForRequest?(request) ?? self.globalCachePolicy
+                if let modificationDate = record.modificationDate
+                    where NSDate().timeIntervalSinceDate(modificationDate) > cachePolicy.maxAge.seconds {
+                    tryFetchFromSource(expired: true)
                 } else {
-                    mainThreadFetchCompletion(responseData, nil)
-                    mainThreadCompletion(true, responseData, nil)
+                    fetchRecordFromCloud(recordName: recordName)
                 }
             } else {
-                tryFetchFromSource(expired: false, data: nil)
+                tryFetchFromSource(expired: false)
             }
         }
+        publicDatabase.addOperation(fetchOperation)
     }
     
     /**
@@ -176,7 +232,7 @@ public class CloudKitAPICacheManager: NSObject {
                     mainThreadCacheCompletion(CloudKitAPICacheError.NoData.toNSError())
                     return
                 }
-                guard self.shouldCacheData(data!, request) == true else {
+                guard self.delegate?.shouldCacheData?(data!, forRequest: request) ?? true else {
                     mainThreadCacheCompletion(CloudKitAPICacheError.NotCached.toNSError())
                     return
                 }
@@ -192,7 +248,8 @@ public class CloudKitAPICacheManager: NSObject {
             
             // Check if the cached version is expired, overwrite the cached API if needed.
             if let lastModifiedDate = record?.modificationDate where error == nil {
-                if NSDate().timeIntervalSinceDate(lastModifiedDate) > self.cachePolicy.maxAge.seconds {
+                let cachePolicy = self.delegate?.cachePolicyForRequest?(request) ?? self.globalCachePolicy
+                if NSDate().timeIntervalSinceDate(lastModifiedDate) > cachePolicy.maxAge.seconds {
                     savePolicy = .ChangedKeys
                 } else {
                     savePolicy = .IfServerRecordUnchanged
@@ -252,6 +309,7 @@ public class CloudKitAPICacheManager: NSObject {
 }
 
 extension NSURLRequest {
+    
     public func removeCachedRequestWithCompletion(completion: CacheErrorBlock) {
         CloudKitAPICacheManager.sharedManager.removeCachedRequest(self, completion: completion)
     }

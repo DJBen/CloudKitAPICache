@@ -13,35 +13,35 @@ extension String {
 
 	// MARK: - Hashing
 
-	public var MD2: String? {
+	var MD2: String? {
 		return String(digestData: hashData?.MD2, length: CC_MD2_DIGEST_LENGTH)
 	}
 
-	public var MD4: String? {
+	var MD4: String? {
 		return String(digestData: hashData?.MD4, length: CC_MD4_DIGEST_LENGTH)
 	}
 
-	public var MD5: String? {
+	var MD5: String? {
 		return String(digestData: hashData?.MD5, length: CC_MD5_DIGEST_LENGTH)
 	}
 	
-	public var SHA1: String? {
+	var SHA1: String? {
 		return String(digestData: hashData?.SHA1, length: CC_SHA1_DIGEST_LENGTH)
 	}
 
-	public var SHA224: String? {
+	var SHA224: String? {
 		return String(digestData: hashData?.SHA224, length: CC_SHA224_DIGEST_LENGTH)
 	}
 
-	public var SHA256: String? {
+	var SHA256: String? {
 		return String(digestData: hashData?.SHA256, length: CC_SHA256_DIGEST_LENGTH)
 	}
 
-	public var SHA384: String? {
+	var SHA384: String? {
 		return String(digestData: hashData?.SHA384, length: CC_SHA384_DIGEST_LENGTH)
 	}
 
-	public var SHA512: String? {
+	var SHA512: String? {
 		return String(digestData: hashData?.SHA512, length: CC_SHA512_DIGEST_LENGTH)
 	}
 
