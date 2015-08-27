@@ -62,7 +62,7 @@ extension NSURLRequest {
             CloudKitAPICacheRecordKeys.URL.rawValue: URL?.absoluteString ?? "",
             CloudKitAPICacheRecordKeys.Header.rawValue: allHTTPHeaderFields ?? [:]]
         do {
-            let json = try String(data: NSJSONSerialization.dataWithJSONObject(dict, options: NSJSONWritingOptions()), encoding: NSUTF8StringEncoding)
+            let json = try String(data: NSJSONSerialization.dataWithJSONObject(dict, options: NSJSONWritingOptions()), encoding: NSUTF8StringEncoding)!
             return json.SHA1
         } catch {
             return nil

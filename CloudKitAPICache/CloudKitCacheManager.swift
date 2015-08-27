@@ -183,7 +183,7 @@ public class CloudKitAPICacheManager: NSObject {
                 return
             }
             if recordDict!.count > 0 {
-                let record = recordDict!.values.array[0]
+                let record = Array(recordDict!.values)[0]
                 let cachePolicy = self.delegate?.cachePolicyForRequest?(request) ?? self.globalCachePolicy
                 if let modificationDate = record.modificationDate
                     where NSDate().timeIntervalSinceDate(modificationDate) > cachePolicy.maxAge.seconds {
