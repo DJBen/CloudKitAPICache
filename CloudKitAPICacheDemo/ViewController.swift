@@ -54,7 +54,7 @@ class ViewController: UIViewController {
             } catch let JSONError {
                 self.responseTextView.appendText("\(JSONError)")
             }
-        }) { (error) in
+        }) { (_, error) in
             defer {
                 dispatch_group_leave(group)
             }

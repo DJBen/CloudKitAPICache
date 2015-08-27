@@ -99,15 +99,15 @@ public class CloudKitAPICacheManager: NSObject {
     :param: completion      The completion block that returns the cached data of the request; if the data has not been 
     cached, it will fetch the data from the original API and return it
     */
-    public func fetchCachedDataForRequest(request: NSURLRequest, autoFetch: Bool = true, fetchCompletion: CacheDataBlock? = nil, cacheCompletion: CacheErrorBlock? = nil, completion: CachedDataCompletionBlock) {
+    public func fetchCachedDataForRequest(request: NSURLRequest, autoFetch: Bool = true, fetchCompletion: CacheDataBlock? = nil, cacheCompletion: CacheDataBlock? = nil, completion: CachedDataCompletionBlock) {
         let mainThreadFetchCompletion: CacheDataBlock = { data, error in
             dispatch_async(dispatch_get_main_queue()) {
                 fetchCompletion?(data, error)
             }
         }
-        let mainThreadCacheCompletion: CacheErrorBlock = { error in
+        let mainThreadCacheCompletion: CacheDataBlock = { data, error in
             dispatch_async(dispatch_get_main_queue()) {
-                cacheCompletion?(error)
+                cacheCompletion?(data, error)
             }
         }
         let mainThreadCompletion: CachedDataCompletionBlock = { isCached, data, error in
@@ -133,7 +133,7 @@ public class CloudKitAPICacheManager: NSObject {
                 mainThreadCompletion(false, data, nil)
                 
                 guard self.delegate?.shouldCacheData?(data!, forRequest: request) ?? true else {
-                    mainThreadCacheCompletion(CloudKitAPICacheError.NotCached.toNSError())
+                    mainThreadCacheCompletion(data, CloudKitAPICacheError.NotCached.toNSError())
                     return
                 }
                 self.cacheRequest(request, data: data!, savePolicy: .ChangedKeys) { (error) -> Void in
@@ -208,10 +208,10 @@ public class CloudKitAPICacheManager: NSObject {
     overwrite the cached APIs on iCloud if it is expired according to the cache policy.
 
     */
-    public func cacheRequest(request: NSURLRequest, requestCompletion: CacheNetworkResponseBlock, cacheCompletion: CacheErrorBlock? = nil) {
-        let mainThreadCacheCompletion: CacheErrorBlock = { error in
+    public func cacheRequest(request: NSURLRequest, requestCompletion: CacheNetworkResponseBlock, cacheCompletion: CacheDataBlock? = nil) {
+        let mainThreadCacheCompletion: CacheDataBlock = { data, error in
             dispatch_async(dispatch_get_main_queue()) {
-                cacheCompletion?(error)
+                cacheCompletion?(data, error)
             }
         }
         let mainThreadRequestCompletion: CacheNetworkResponseBlock = { data, response, error in
@@ -224,16 +224,16 @@ public class CloudKitAPICacheManager: NSObject {
             let task = NSURLSession.sharedSession().dataTaskWithRequest(request) { (data, response, error) -> Void in
                 guard error == nil else {
                     mainThreadRequestCompletion(data, response, CloudKitAPICacheError.RequestError(underlyingError: error!).toNSError())
-                    mainThreadCacheCompletion(CloudKitAPICacheError.RequestError(underlyingError: error!).toNSError())
+                    mainThreadCacheCompletion(data, CloudKitAPICacheError.RequestError(underlyingError: error!).toNSError())
                     return
                 }
                 mainThreadRequestCompletion(data, response, nil)
                 guard data != nil else {
-                    mainThreadCacheCompletion(CloudKitAPICacheError.NoData.toNSError())
+                    mainThreadCacheCompletion(nil, CloudKitAPICacheError.NoData.toNSError())
                     return
                 }
                 guard self.delegate?.shouldCacheData?(data!, forRequest: request) ?? true else {
-                    mainThreadCacheCompletion(CloudKitAPICacheError.NotCached.toNSError())
+                    mainThreadCacheCompletion(data, CloudKitAPICacheError.NotCached.toNSError())
                     return
                 }
                 self.cacheRequest(request, data: data!, savePolicy: policy, completion: mainThreadCacheCompletion)
@@ -264,9 +264,9 @@ public class CloudKitAPICacheManager: NSObject {
         
     }
     
-    func cacheRequest(request: NSURLRequest, data: NSData, savePolicy: CKRecordSavePolicy = .IfServerRecordUnchanged, completion: ((NSError?) -> Void)?) {
+    func cacheRequest(request: NSURLRequest, data: NSData, savePolicy: CKRecordSavePolicy = .IfServerRecordUnchanged, completion: CacheDataBlock?) {
         guard let record = request.cachedRequestRecord else {
-            completion?(CloudKitAPICacheError.MalformedRequest.toNSError())
+            completion?(data, CloudKitAPICacheError.MalformedRequest.toNSError())
             return
         }
         record[.ResponseData] = data
@@ -274,10 +274,10 @@ public class CloudKitAPICacheManager: NSObject {
         saveRecordOperation.savePolicy = savePolicy
         saveRecordOperation.modifyRecordsCompletionBlock = { savedRecords, _, error in
             guard error == nil else {
-                completion?(CloudKitAPICacheError.RequestError(underlyingError: error!).toNSError())
+                completion?(data, CloudKitAPICacheError.RequestError(underlyingError: error!).toNSError())
                 return
             }
-            completion?(nil)
+            completion?(data, nil)
         }
         publicDatabase.addOperation(saveRecordOperation)
     }
@@ -314,11 +314,11 @@ extension NSURLRequest {
         CloudKitAPICacheManager.sharedManager.removeCachedRequest(self, completion: completion)
     }
     
-    public func cacheRequestWithCompletion(requestCompletion: CacheNetworkResponseBlock, cacheCompletion: CacheErrorBlock? = nil) {
+    public func cacheRequestWithCompletion(requestCompletion: CacheNetworkResponseBlock, cacheCompletion: CacheDataBlock? = nil) {
         CloudKitAPICacheManager.sharedManager.cacheRequest(self, requestCompletion: requestCompletion, cacheCompletion: cacheCompletion)
     }
     
-    public func fetchCachedData(autoFetch autoFetch: Bool = true, fetchCompletion: CacheDataBlock? = nil, cacheCompletion: CacheErrorBlock? = nil, completion: CachedDataCompletionBlock) {
+    public func fetchCachedData(autoFetch autoFetch: Bool = true, fetchCompletion: CacheDataBlock? = nil, cacheCompletion: CacheDataBlock? = nil, completion: CachedDataCompletionBlock) {
         CloudKitAPICacheManager.sharedManager.fetchCachedDataForRequest(self, autoFetch: autoFetch, fetchCompletion: fetchCompletion, cacheCompletion: cacheCompletion, completion: completion)
     }
 }
