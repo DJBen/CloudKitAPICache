@@ -51,6 +51,8 @@ public class CloudKitAPICacheManager: NSObject {
     public static let sharedManager = CloudKitAPICacheManager()
 
     public static let UnderlyingErrorKey = "underlyingError"
+    public static let RetriesLeftKey = "retriesLeft"
+    public static let RetryDelayKey = "retryDelay"
 
     public enum CloudKitAPICacheError: ErrorType {
         case RequestError(underlyingError: NSError)
@@ -58,6 +60,7 @@ public class CloudKitAPICacheManager: NSObject {
         case CachedRecordExpired
         case MalformedRequest
         case NotCached // The user has responded `false` to the `shouldCacheData` block, therefore the data is not cached
+        case TemporaryError(underlyingError: NSError, retriesLeft: Int, retryDelay: NSTimeInterval)
         
         // This is a hack involving ErrorType loses the associated object when cast to NSError
         // We have to replicate an NSError in order to pass the associated object into userInfo dict
@@ -66,6 +69,9 @@ public class CloudKitAPICacheManager: NSObject {
             switch self {
             case .RequestError(let underlyingError):
                 let error = NSError(domain: "CloudKitAPICache.CloudKitAPICacheManager.CloudKitAPICacheError", code: 0, userInfo: [UnderlyingErrorKey: underlyingError])
+                return error
+            case let .TemporaryError(underlyingError, retries, retryDelay):
+                let error = NSError(domain: "CloudKitAPICache.CloudKitAPICacheManager.CloudKitAPICacheError", code: 5, userInfo: [UnderlyingErrorKey: underlyingError, RetriesLeftKey: retries, RetryDelayKey: retryDelay])
                 return error
             default:
                 return self as NSError
@@ -265,6 +271,11 @@ public class CloudKitAPICacheManager: NSObject {
     }
     
     func cacheRequest(request: NSURLRequest, data: NSData, savePolicy: CKRecordSavePolicy = .IfServerRecordUnchanged, completion: CacheDataBlock?) {
+        let cachePolicy = self.delegate?.cachePolicyForRequest?(request) ?? self.globalCachePolicy
+        cacheRequest(request, data: data, savePolicy: savePolicy, retryTimes: cachePolicy.cacheRetryTimes, retryDelay: cachePolicy.cacheRetryDelay, completion: completion)
+    }
+    
+    func cacheRequest(request: NSURLRequest, data: NSData, savePolicy: CKRecordSavePolicy = .IfServerRecordUnchanged, retryTimes: Int, retryDelay: NSTimeInterval, completion: CacheDataBlock?) {
         guard let record = request.cachedRequestRecord else {
             completion?(data, CloudKitAPICacheError.MalformedRequest.toNSError())
             return
@@ -274,7 +285,21 @@ public class CloudKitAPICacheManager: NSObject {
         saveRecordOperation.savePolicy = savePolicy
         saveRecordOperation.modifyRecordsCompletionBlock = { savedRecords, _, error in
             guard error == nil else {
-                completion?(data, CloudKitAPICacheError.RequestError(underlyingError: error!).toNSError())
+                if error!.code == CKErrorCode.ZoneBusy.rawValue {
+                    // Server busy, retry with exponentially growing retry delay and limited retry times
+                    // According to the advice from Apple on how to deal with `ZoneBusy` errors
+                    if retryTimes > 0 {
+                        let nextRetryDelay: NSTimeInterval = retryDelay == 0 ? 1 : retryDelay * 2
+                        completion?(data, CloudKitAPICacheError.TemporaryError(underlyingError: error!, retriesLeft: retryTimes - 1, retryDelay: retryDelay).toNSError())
+                        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, Int64(retryDelay * Double(NSEC_PER_SEC))), dispatch_get_main_queue()) {
+                            self.cacheRequest(request, data: data, savePolicy: savePolicy, retryTimes: retryTimes - 1, retryDelay: nextRetryDelay, completion: completion)
+                        }
+                    } else {
+                        completion?(data, CloudKitAPICacheError.RequestError(underlyingError: error!).toNSError())
+                    }
+                } else {
+                    completion?(data, CloudKitAPICacheError.RequestError(underlyingError: error!).toNSError())
+                }
                 return
             }
             completion?(data, nil)

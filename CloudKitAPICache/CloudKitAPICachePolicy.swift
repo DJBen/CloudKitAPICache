@@ -69,12 +69,27 @@ public class CloudKitAPICachePolicy: NSObject {
     
     public let maxAge: MaxAge
     
+    /// Number of times to retry when caching fails
+    public let cacheRetryTimes: Int
+    
+    /// Delay between retries when caching fails
+    public let cacheRetryDelay: NSTimeInterval
+    
     private convenience override init() {
         self.init(maxAge: .OneHour)
     }
     
     public init(maxAge: MaxAge) {
         self.maxAge = maxAge
+        self.cacheRetryTimes = 3
+        self.cacheRetryDelay = 1.0
+        super.init()
+    }
+    
+    public init(maxAge: MaxAge, cacheRetryTimes: Int, cacheDelay: NSTimeInterval) {
+        self.maxAge = maxAge
+        self.cacheRetryTimes = cacheRetryTimes
+        self.cacheRetryDelay = cacheDelay
         super.init()
     }
     
