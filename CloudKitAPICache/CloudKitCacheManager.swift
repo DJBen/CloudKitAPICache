@@ -61,6 +61,7 @@ public class CloudKitAPICacheManager: NSObject {
         case MalformedRequest
         case NotCached // The user has responded `false` to the `shouldCacheData` block, therefore the data is not cached
         case TemporaryError(underlyingError: NSError, retriesLeft: Int, retryDelay: NSTimeInterval)
+        case AlreadyProcessing
         
         // This is a hack involving ErrorType loses the associated object when cast to NSError
         // We have to replicate an NSError in order to pass the associated object into userInfo dict
@@ -88,6 +89,8 @@ public class CloudKitAPICacheManager: NSObject {
     /// The global cache policy. Defaults to one hour of age. If you wish to change the policy, you can initialize your own policy object and assign to this property. Note that the delegate method `-shouldCacheData:forRequest:` takes precedence over this property.
     public var globalCachePolicy = CloudKitAPICachePolicy.defaultPolicy
     
+    private var requestProcessing = [String: NSURLRequest]()
+    
     private override init() {
         super.init()
     }
@@ -106,6 +109,9 @@ public class CloudKitAPICacheManager: NSObject {
     cached, it will fetch the data from the original API and return it
     */
     public func fetchCachedDataForRequest(request: NSURLRequest, autoFetch: Bool = true, fetchCompletion: CacheDataBlock? = nil, cacheCompletion: CacheDataBlock? = nil, completion: CachedDataCompletionBlock) {
+        
+        let recordHash = request.SHA1!
+
         let mainThreadFetchCompletion: CacheDataBlock = { data, error in
             dispatch_async(dispatch_get_main_queue()) {
                 fetchCompletion?(data, error)
@@ -117,6 +123,9 @@ public class CloudKitAPICacheManager: NSObject {
             }
         }
         let mainThreadCompletion: CachedDataCompletionBlock = { isCached, data, error in
+            if error?.code != CloudKitAPICacheError.AlreadyProcessing._code || error == nil {
+                self.requestProcessing[recordHash] = nil
+            }
             dispatch_async(dispatch_get_main_queue()) {
                 completion(isCached, data, error)
             }
@@ -167,9 +176,16 @@ public class CloudKitAPICacheManager: NSObject {
             }
         }
         
+        // Make sure that the same request is currently processing
+        guard requestProcessing[recordHash] == nil else {
+            mainThreadFetchCompletion(nil, CloudKitAPICacheError.AlreadyProcessing.toNSError())
+            mainThreadCompletion(false, nil, CloudKitAPICacheError.AlreadyProcessing.toNSError())
+            return
+        }
+        requestProcessing[recordHash] = request
+        
         // Fetch only the metadata first, then decide whether to fetch from source or to fetch from cloud based on whether the data has expired
-        let recordName = request.SHA1!
-        let recordID = CKRecordID(recordName: recordName)
+        let recordID = CKRecordID(recordName: recordHash)
         let fetchOperation = CKFetchRecordsOperation(recordIDs: [recordID])
         fetchOperation.desiredKeys = []
         fetchOperation.fetchRecordsCompletionBlock = { recordDict, error in
@@ -195,7 +211,7 @@ public class CloudKitAPICacheManager: NSObject {
                     where NSDate().timeIntervalSinceDate(modificationDate) > cachePolicy.maxAge.seconds {
                     tryFetchFromSource(expired: true)
                 } else {
-                    fetchRecordFromCloud(recordName: recordName)
+                    fetchRecordFromCloud(recordName: recordHash)
                 }
             } else {
                 tryFetchFromSource(expired: false)
@@ -215,7 +231,13 @@ public class CloudKitAPICacheManager: NSObject {
 
     */
     public func cacheRequest(request: NSURLRequest, requestCompletion: CacheNetworkResponseBlock, cacheCompletion: CacheDataBlock? = nil) {
+        
+        let recordHash = request.SHA1!
+
         let mainThreadCacheCompletion: CacheDataBlock = { data, error in
+            if error?.code != CloudKitAPICacheError.AlreadyProcessing._code || error == nil {
+                self.requestProcessing[recordHash] = nil
+            }
             dispatch_async(dispatch_get_main_queue()) {
                 cacheCompletion?(data, error)
             }
@@ -246,10 +268,16 @@ public class CloudKitAPICacheManager: NSObject {
             }
             task.resume()
         }
+    
+        // Make sure that the same request is currently processing
+        guard requestProcessing[recordHash] == nil else {
+            mainThreadRequestCompletion(nil, nil, CloudKitAPICacheError.AlreadyProcessing.toNSError())
+            mainThreadCacheCompletion(nil, CloudKitAPICacheError.AlreadyProcessing.toNSError())
+            return
+        }
+        requestProcessing[recordHash] = request
         
-        let recordName = request.SHA1!
-        
-        publicDatabase.fetchRecordWithID(CKRecordID(recordName: recordName)) { (record, error) -> Void in
+        publicDatabase.fetchRecordWithID(CKRecordID(recordName: recordHash)) { (record, error) -> Void in
             let savePolicy: CKRecordSavePolicy
             
             // Check if the cached version is expired, overwrite the cached API if needed.
