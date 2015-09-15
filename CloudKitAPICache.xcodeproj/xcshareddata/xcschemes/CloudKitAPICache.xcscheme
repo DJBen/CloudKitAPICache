@@ -28,7 +28,26 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES">
       <Testables>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "F43DA84E1BA88198008DF437"
+               BuildableName = "CloudKitAPICacheTests.xctest"
+               BlueprintName = "CloudKitAPICacheTests"
+               ReferencedContainer = "container:CloudKitAPICache.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
+      <MacroExpansion>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "30BEE35D1B4F129100FC9827"
+            BuildableName = "CloudKitAPICache.framework"
+            BlueprintName = "CloudKitAPICache"
+            ReferencedContainer = "container:CloudKitAPICache.xcodeproj">
+         </BuildableReference>
+      </MacroExpansion>
       <AdditionalOptions>
       </AdditionalOptions>
    </TestAction>
