@@ -24,7 +24,7 @@
 		30CD385D1B5B0A5F00C5E250 /* SettingsTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30CD385C1B5B0A5F00C5E250 /* SettingsTableViewController.swift */; };
 		30CD385F1B5B0A7D00C5E250 /* Requests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30CD385E1B5B0A7D00C5E250 /* Requests.swift */; };
 		F43DA8521BA88198008DF437 /* CloudKitAPICacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F43DA8511BA88198008DF437 /* CloudKitAPICacheTests.swift */; };
-		F43DA8541BA88198008DF437 /* CloudKitAPICache.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 30BEE35E1B4F129100FC9827 /* CloudKitAPICache.framework */; settings = {ASSET_TAGS = (); }; };
+		F43DA8541BA88198008DF437 /* CloudKitAPICache.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 30BEE35E1B4F129100FC9827 /* CloudKitAPICache.framework */; };
 		F4A646FC1B8090BB000DC3B1 /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F4A646FB1B8090BB000DC3B1 /* CloudKit.framework */; };
 /* End PBXBuildFile section */
 
@@ -499,6 +499,7 @@
 		30BEE3671B4F129100FC9827 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
@@ -524,6 +525,7 @@
 		30BEE3681B4F129100FC9827 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
@@ -548,6 +550,7 @@
 		30BEE37D1B4F12A500FC9827 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = CloudKitAPICacheDemo/CloudKitAPICacheDemo.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
@@ -565,6 +568,7 @@
 		30BEE37E1B4F12A500FC9827 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = CloudKitAPICacheDemo/CloudKitAPICacheDemo.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
@@ -636,6 +640,7 @@
 				F43DA8581BA88198008DF437 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
