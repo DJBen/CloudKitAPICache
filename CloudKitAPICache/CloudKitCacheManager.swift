@@ -82,8 +82,11 @@ public class CloudKitAPICacheManager: NSObject {
     
     public var delegate: CloudKitAPICacheDelegate?
     
+    /// Container to use in iCloud, customize this before you do any caching operations
+    public lazy var container: CKContainer = CKContainer.defaultContainer()
+    
     var publicDatabase: CKDatabase {
-        return CKContainer.defaultContainer().publicCloudDatabase
+        return container.publicCloudDatabase
     }
     
     /// The global cache policy. Defaults to one hour of age. If you wish to change the policy, you can initialize your own policy object and assign to this property. Note that the delegate method `-shouldCacheData:forRequest:` takes precedence over this property.
