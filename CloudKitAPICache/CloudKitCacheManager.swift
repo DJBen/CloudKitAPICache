@@ -7,7 +7,6 @@
 //
 
 import UIKit
-import CommonCrypto
 import CloudKit
 
 public typealias CachedDataCompletionBlock =  (Bool, NSData?, NSError?) -> Void
@@ -154,9 +153,7 @@ public class CloudKitAPICacheManager: NSObject {
                     mainThreadCacheCompletion(data, CloudKitAPICacheError.NotCached.toNSError())
                     return
                 }
-                self.cacheRequest(request, data: data!, savePolicy: .ChangedKeys) { (error) -> Void in
-                    mainThreadCacheCompletion(error)
-                }
+                self.cacheRequest(request, data: data!, savePolicy: .ChangedKeys, completion: mainThreadCacheCompletion)
             }
             task.resume()
         }

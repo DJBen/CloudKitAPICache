@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import IDZSwiftCommonCrypto
 import CloudKit
 
 enum CloudKitAPICacheRecordKeys: String {
@@ -78,5 +79,13 @@ extension CKRecord {
         set {
             self[key.rawValue] = newValue
         }
+    }
+}
+
+extension String {
+    var SHA1: String {
+        let md5 = Digest(algorithm: .MD5)
+        md5.update(self)
+        return hexStringFromArray(md5.final())
     }
 }

@@ -16,8 +16,6 @@
 		30BEE37A1B4F12A500FC9827 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 30BEE3781B4F12A500FC9827 /* LaunchScreen.storyboard */; };
 		30BEE3801B4F12C400FC9827 /* NSURLRequest+CloudKitAPICache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30BEE37F1B4F12C400FC9827 /* NSURLRequest+CloudKitAPICache.swift */; };
 		30BEE3F71B4F1A2700FC9827 /* CloudKitCacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30BEE3F61B4F1A2700FC9827 /* CloudKitCacheManager.swift */; };
-		30BEE3FF1B4F249500FC9827 /* NSData+Crypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30BEE3FD1B4F249500FC9827 /* NSData+Crypto.swift */; };
-		30BEE4001B4F249500FC9827 /* String+Crypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30BEE3FE1B4F249500FC9827 /* String+Crypto.swift */; };
 		30BEE4071B4F335F00FC9827 /* CloudKitAPICache.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 30BEE35E1B4F129100FC9827 /* CloudKitAPICache.framework */; };
 		30BEE4081B4F335F00FC9827 /* CloudKitAPICache.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 30BEE35E1B4F129100FC9827 /* CloudKitAPICache.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		30CD385B1B5B03E100C5E250 /* APIKeys.plist in Resources */ = {isa = PBXBuildFile; fileRef = 30CD385A1B5B03E100C5E250 /* APIKeys.plist */; };
@@ -25,6 +23,7 @@
 		30CD385F1B5B0A7D00C5E250 /* Requests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30CD385E1B5B0A7D00C5E250 /* Requests.swift */; };
 		F43DA8521BA88198008DF437 /* CloudKitAPICacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F43DA8511BA88198008DF437 /* CloudKitAPICacheTests.swift */; };
 		F43DA8541BA88198008DF437 /* CloudKitAPICache.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 30BEE35E1B4F129100FC9827 /* CloudKitAPICache.framework */; };
+		F49E210A1CAC850300D52896 /* IDZSwiftCommonCrypto.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F49E21091CAC850300D52896 /* IDZSwiftCommonCrypto.framework */; };
 		F4A646FC1B8090BB000DC3B1 /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F4A646FB1B8090BB000DC3B1 /* CloudKit.framework */; };
 /* End PBXBuildFile section */
 
@@ -73,15 +72,13 @@
 		30BEE37B1B4F12A500FC9827 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		30BEE37F1B4F12C400FC9827 /* NSURLRequest+CloudKitAPICache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "NSURLRequest+CloudKitAPICache.swift"; sourceTree = "<group>"; };
 		30BEE3F61B4F1A2700FC9827 /* CloudKitCacheManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CloudKitCacheManager.swift; sourceTree = "<group>"; };
-		30BEE3F91B4F1FA200FC9827 /* module.map */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = "sourcecode.module-map"; path = module.map; sourceTree = "<group>"; };
-		30BEE3FD1B4F249500FC9827 /* NSData+Crypto.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "NSData+Crypto.swift"; sourceTree = "<group>"; };
-		30BEE3FE1B4F249500FC9827 /* String+Crypto.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "String+Crypto.swift"; sourceTree = "<group>"; };
 		30CD385A1B5B03E100C5E250 /* APIKeys.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = APIKeys.plist; sourceTree = "<group>"; };
 		30CD385C1B5B0A5F00C5E250 /* SettingsTableViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsTableViewController.swift; sourceTree = "<group>"; };
 		30CD385E1B5B0A7D00C5E250 /* Requests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Requests.swift; sourceTree = "<group>"; };
 		F43DA84F1BA88198008DF437 /* CloudKitAPICacheTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CloudKitAPICacheTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F43DA8511BA88198008DF437 /* CloudKitAPICacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitAPICacheTests.swift; sourceTree = "<group>"; };
 		F43DA8531BA88198008DF437 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		F49E21091CAC850300D52896 /* IDZSwiftCommonCrypto.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IDZSwiftCommonCrypto.framework; path = Carthage/Build/iOS/IDZSwiftCommonCrypto.framework; sourceTree = "<group>"; };
 		F4A646FA1B8090B3000DC3B1 /* CloudKitAPICacheDemo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = CloudKitAPICacheDemo.entitlements; sourceTree = "<group>"; };
 		F4A646FB1B8090BB000DC3B1 /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
@@ -91,6 +88,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F49E210A1CAC850300D52896 /* IDZSwiftCommonCrypto.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -117,6 +115,7 @@
 		30BEE3541B4F129100FC9827 = {
 			isa = PBXGroup;
 			children = (
+				F49E21091CAC850300D52896 /* IDZSwiftCommonCrypto.framework */,
 				F4A646FB1B8090BB000DC3B1 /* CloudKit.framework */,
 				30BEE3601B4F129100FC9827 /* CloudKitAPICache */,
 				30BEE36E1B4F12A500FC9827 /* CloudKitAPICacheDemo */,
@@ -168,20 +167,9 @@
 		30BEE3811B4F18FD00FC9827 /* Library */ = {
 			isa = PBXGroup;
 			children = (
-				30BEE3FD1B4F249500FC9827 /* NSData+Crypto.swift */,
-				30BEE3FE1B4F249500FC9827 /* String+Crypto.swift */,
-				30BEE3F81B4F1F7F00FC9827 /* CommonCrypto */,
 			);
 			name = Library;
 			path = Libraries;
-			sourceTree = "<group>";
-		};
-		30BEE3F81B4F1F7F00FC9827 /* CommonCrypto */ = {
-			isa = PBXGroup;
-			children = (
-				30BEE3F91B4F1FA200FC9827 /* module.map */,
-			);
-			path = CommonCrypto;
 			sourceTree = "<group>";
 		};
 		F43DA8501BA88198008DF437 /* CloudKitAPICacheTests */ = {
@@ -215,6 +203,7 @@
 				30BEE35A1B4F129100FC9827 /* Frameworks */,
 				30BEE35B1B4F129100FC9827 /* Headers */,
 				30BEE35C1B4F129100FC9827 /* Resources */,
+				F49E21081CAC842C00D52896 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -338,16 +327,31 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		F49E21081CAC842C00D52896 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Carthage/Build/iOS/IDZSwiftCommonCrypto.framework",
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/usr/local/bin/carthage copy-frameworks\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		30BEE3591B4F129100FC9827 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				30BEE3F71B4F1A2700FC9827 /* CloudKitCacheManager.swift in Sources */,
-				30BEE4001B4F249500FC9827 /* String+Crypto.swift in Sources */,
 				30BEE3801B4F12C400FC9827 /* NSURLRequest+CloudKitAPICache.swift in Sources */,
 				30B05DC01B54283600F27418 /* CloudKitAPICachePolicy.swift in Sources */,
-				30BEE3FF1B4F249500FC9827 /* NSData+Crypto.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -507,6 +511,10 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/iOS",
+				);
 				INFOPLIST_FILE = CloudKitAPICache/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
@@ -533,6 +541,10 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/iOS",
+				);
 				INFOPLIST_FILE = CloudKitAPICache/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
